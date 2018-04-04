@@ -1,18 +1,10 @@
-FROM alpine:3.6 as alpine
-RUN apk add -U --no-cache ca-certificates
+FROM golang:1.9-alpine
+WORKDIR /go/src/github.com/drone-plugins/drone-slack
+ADD . .
+RUN GOOS=linux CGO_ENABLED=0 go build -o /bin/drone-slack \
+    github.com/drone-plugins/drone-slack
 
-FROM scratch
-MAINTAINER Drone.IO Community <drone-dev@googlegroups.com>
-
-ENV GODEBUG=netdns=go
-
-COPY --from=alpine /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-
-LABEL org.label-schema.version=latest
-LABEL org.label-schema.vcs-url="https://github.com/drone-plugins/drone-slack.git"
-LABEL org.label-schema.name="Drone Slack"
-LABEL org.label-schema.vendor="Drone.IO Community"
-LABEL org.label-schema.schema-version="1.0"
-
-ADD release/linux/amd64/drone-slack /bin/
-ENTRYPOINT [ "/bin/drone-slack" ]
+FROM alpine:3.7
+RUN apk add --no-cache ca-certificates
+COPY --from=0 /bin/drone-slack /bin/drone-slack
+ENTRYPOINT ["/bin/drone-slack"]
